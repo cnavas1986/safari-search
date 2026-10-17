@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>Tab Search</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="search">
+    <svg class="search-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <line x1="12.6" y1="12.6" x2="17" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <input id="query" type="search" placeholder="Search tabs" autocomplete="off" spellcheck="false" autofocus>
+  </div>
+  <div id="header" class="section-header">Open tabs</div>
+  <ul id="results" role="listbox" aria-label="Open tabs"></ul>
+  <div id="empty" class="empty" hidden>No results found</div>
+  <script src="popup.js"></script>
+</body>
+</html>
