@@ -47,9 +47,11 @@ class ViewController: NSViewController, WKNavigationDelegate, WKScriptMessageHan
             return;
         }
 
+        // The app keeps running in the menu bar for the search panel, so just
+        // close this window rather than quitting.
         SFSafariApplication.showPreferencesForExtension(withIdentifier: extensionBundleIdentifier) { error in
             DispatchQueue.main.async {
-                NSApplication.shared.terminate(nil)
+                self.view.window?.close()
             }
         }
     }

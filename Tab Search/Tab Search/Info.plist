@@ -4,5 +4,9 @@
 <dict>
 	<key>SFSafariWebExtensionConverterVersion</key>
 	<string>27.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Tab Search reads your Safari tabs so you can search them, and switches to the tab you pick.</string>
 </dict>
 </plist>
