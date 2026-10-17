@@ -24,6 +24,12 @@ xcodebuild -project "Tab Search/Tab Search.xcodeproj" -scheme "Tab Search" \
 open "build/Build/Products/Debug/Tab Search.app"
 ```
 
+Replace `YOUR_TEAM_ID` with your Apple Developer team ID. It's the `OU` value of your signing certificate:
+
+```sh
+security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject
+```
+
 If the build fails with "Embedded binary is not signed with the same certificate", run `rm -rf build` and build again.
 
 The unsigned steps below are only needed if you build without a team (`CODE_SIGN_IDENTITY="-"`).
