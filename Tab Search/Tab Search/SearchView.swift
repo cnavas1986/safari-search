@@ -26,7 +26,7 @@ struct SearchView: View {
             if !model.results.isEmpty {
                 Divider()
                 results
-            } else if let text = model.message ?? (model.query.isEmpty ? nil : "No results found") {
+            } else if let text = model.emptyText {
                 Divider()
                 Text(text)
                     .foregroundStyle(.secondary)
@@ -119,19 +119,61 @@ private struct TabRow: View {
     }
 }
 
+/// Favicons kept in memory for as long as the app runs, so after the first
+/// open they appear instantly instead of flashing the letter tile while they
+/// re-download. Sites without one are remembered too, and not retried.
+@MainActor
+private final class FaviconCache {
+    static let shared = FaviconCache()
+
+    private var images: [URL: NSImage] = [:]
+    private var missing: Set<URL> = []
+    private var inFlight: [URL: Task<NSImage?, Never>] = [:]
+
+    func cached(_ url: URL) -> NSImage? { images[url] }
+
+    func load(_ url: URL) async -> NSImage? {
+        if let image = images[url] { return image }
+        if missing.contains(url) { return nil }
+        if let task = inFlight[url] { return await task.value }
+
+        let task = Task { () -> NSImage? in
+            guard let (data, response) = try? await URLSession.shared.data(from: url),
+                  (response as? HTTPURLResponse)?.statusCode == 200,
+                  let image = NSImage(data: data), image.size.width > 1 else { return nil }
+            return image
+        }
+        inFlight[url] = task
+        let image = await task.value
+        inFlight[url] = nil
+        if let image { images[url] = image } else { missing.insert(url) }
+        return image
+    }
+}
+
 /// The site's /favicon.ico, or a coloured letter tile when there isn't one.
 private struct Favicon: View {
     let tab: SafariTab
+    @State private var image: NSImage?
+
+    init(tab: SafariTab) {
+        self.tab = tab
+        _image = State(initialValue: tab.faviconURL.flatMap { FaviconCache.shared.cached($0) })
+    }
 
     var body: some View {
-        AsyncImage(url: tab.faviconURL) { phase in
-            if let image = phase.image {
-                image.resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+        Group {
+            if let image {
+                Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
             } else {
                 letterTile
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 4))
+        .task(id: tab.faviconURL) {
+            guard image == nil, let url = tab.faviconURL else { return }
+            image = await FaviconCache.shared.load(url)
+        }
     }
 
     private var seed: String { tab.displayURL.isEmpty ? tab.title : tab.displayURL }

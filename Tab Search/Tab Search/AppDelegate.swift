@@ -55,9 +55,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    private var warmedUp = false
+
     private func updateHotKey(for app: NSRunningApplication?) {
         // Our own app becomes active while the setup window is in front.
         hotKey.isEnabled = app?.bundleIdentifier == Self.safariBundleID
+        // The first AppleScript run is slow; get it out of the way as soon as
+        // Safari is in use, before the first ⌘⇧F.
+        if hotKey.isEnabled && !warmedUp {
+            warmedUp = true
+            SafariTabs.warmUp()
+        }
     }
 
     // MARK: - Menu bar

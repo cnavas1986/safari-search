@@ -32,23 +32,42 @@ final class SearchModel {
     @ObservationIgnored var onDismiss: () -> Void = {}
     @ObservationIgnored var onLayoutChange: () -> Void = {}
 
+    /// True between showing the panel and the tabs arriving.
+    private(set) var isLoading = false
+
     var preferredHeight: CGFloat {
         if !results.isEmpty {
             let rows = CGFloat(min(results.count, Self.maxVisibleRows))
             return Self.headerHeight + 1 + rows * Self.rowHeight + Self.listPadding * 2
         }
-        if message != nil || !query.isEmpty { return Self.headerHeight + 1 + Self.messageHeight }
+        if emptyText != nil { return Self.headerHeight + 1 + Self.messageHeight }
         return Self.headerHeight
     }
 
-    func reset(with tabs: [SafariTab], message: String? = nil) {
+    /// The text under the field when there are no rows to show.
+    var emptyText: String? {
+        if let message { return message }
+        return isLoading || query.isEmpty ? nil : "No results found"
+    }
+
+    /// Clears the panel for a new open, before the tabs have been fetched.
+    func begin() {
+        tabs = []
+        message = nil
+        isLoading = true
+        selection = 0
+        query = "" // refilters
+        showCount += 1
+    }
+
+    /// Fills in the fetched tabs, keeping whatever was typed meanwhile.
+    func load(_ tabs: [SafariTab], message: String? = nil) {
         // Frontmost window first, each in tab order, with the tab you're on at
         // the bottom (like Chrome) so the top row is a different tab.
         self.tabs = tabs.filter { !($0.isCurrent && $0.inFrontWindow) } + tabs.filter { $0.isCurrent && $0.inFrontWindow }
         self.message = message
-        selection = 0
-        query = "" // refilters
-        showCount += 1
+        isLoading = false
+        refilter()
     }
 
     func move(by delta: Int) {
@@ -162,18 +181,29 @@ final class SearchPanelController {
         if isVisible { hide() } else { show() }
     }
 
+    /// Shows the field right away and fills in the tabs when they arrive
+    /// (~35 ms), so you can start typing immediately.
     func show() {
+        model.begin()
+        place()
+        panel.makeKeyAndOrderFront(nil)
+        // The shadow is computed from what's drawn; redo it once the
+        // rounded content is on screen, or it comes out square.
+        DispatchQueue.main.async { self.panel.invalidateShadow() }
+
+        let showCount = model.showCount
         Task {
+            let tabs: [SafariTab]
+            var message: String?
             do {
-                model.reset(with: try await SafariTabs.fetch())
+                tabs = try await SafariTabs.fetch()
             } catch {
-                model.reset(with: [], message: error.localizedDescription)
+                tabs = []
+                message = error.localizedDescription
             }
-            place()
-            panel.makeKeyAndOrderFront(nil)
-            // The shadow is computed from what's drawn; redo it once the
-            // rounded content is on screen, or it comes out square.
-            DispatchQueue.main.async { self.panel.invalidateShadow() }
+            // Ignore a slow fetch from an earlier open.
+            guard model.showCount == showCount else { return }
+            model.load(tabs, message: message)
         }
     }
 
