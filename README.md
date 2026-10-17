@@ -75,4 +75,24 @@ The `extension/` folder also loads unpacked in Chrome: go to `chrome://extension
 
 ## Distribution
 
-To share the extension, sign it with a Developer ID and notarize it, or submit it through the Mac App Store. Either way you need an Apple Developer account. Set the team in Xcode and use Product → Archive.
+`scripts/release.sh` builds a Developer ID-signed, notarized `build/release/Tab Search <version>.dmg` that installs on any Mac. It doesn't use the Mac App Store: the panel controls Safari through an Apple Events sandbox exception, which App Store review usually rejects.
+
+One-time setup:
+
+1. In Xcode → Settings → Accounts → your team → Manage Certificates, add a **Developer ID Application** certificate.
+2. Save notarization credentials, using an app-specific password from [account.apple.com](https://account.apple.com). Run this in Terminal; it prompts for the password:
+   ```sh
+   xcrun notarytool store-credentials TabSearch --apple-id <your Apple ID> --team-id <your team ID>
+   ```
+
+Then:
+
+```sh
+scripts/release.sh                # build, sign, notarize, staple
+scripts/release.sh --no-notarize  # build and sign only, for a quick check
+scripts/release.sh --publish      # also attach the .dmg to a GitHub Release v<version>
+```
+
+The version is the app's `MARKETING_VERSION`; bump it in Xcode before each release. The script detects the signing identity and team from your keychain, so neither is stored in the repo. If signing fails with `errSecInternalComponent`, macOS needs permission to use the certificate's key. Run the script once in Terminal and choose **Always Allow** when the keychain asks.
+
+To install on another Mac: open the `.dmg`, drag Tab Search to Applications and open it. Then enable the extension in Safari → Settings → Extensions, allow Tab Search to control Safari when asked, and turn on **Open at Login** from its menu-bar icon.
