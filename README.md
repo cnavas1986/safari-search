@@ -98,3 +98,7 @@ scripts/release.sh --publish      # also attach the .dmg to a GitHub Release v<v
 The version is the app's `MARKETING_VERSION`; bump it in Xcode before each release. The script detects the signing identity and team from your keychain, so neither is stored in the repo. If signing fails with `errSecInternalComponent`, macOS needs permission to use the certificate's key. Run the script once in Terminal and choose **Always Allow** when the keychain asks.
 
 To install on another Mac: open the `.dmg`, drag Tab Search to Applications and open it. Then enable the extension in Safari → Settings → Extensions, allow Tab Search to control Safari when asked, and turn on **Open at Login** from its menu-bar icon.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
