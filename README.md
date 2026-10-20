@@ -2,6 +2,8 @@
 
 Chrome-style tab search for Safari. Press **⌘⇧F** in Safari and a Spotlight-style panel appears in the centre of the screen. Type to filter every open tab across all windows, then jump to a tab or close it from the keyboard.
 
+Requires macOS 26 or later.
+
 It comes in two parts:
 
 - **The Tab Search app** (menu bar). It owns ⌘⇧F while Safari is in front and shows the native panel. It reads and switches tabs through AppleScript, so macOS asks once to let it control Safari.
